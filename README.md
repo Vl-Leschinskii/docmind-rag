@@ -40,7 +40,7 @@ Orchestrator
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/ВАШ_ЛОГИН/docmind-rag.git
+git clone https://github.com/Vl-Leschinskii/docmind-rag.git
 cd docmind-rag
 
 # Создание виртуального окружения
