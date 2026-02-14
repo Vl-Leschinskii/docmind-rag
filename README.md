@@ -53,7 +53,10 @@ venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 
 # Создание необходимых папок
+### Linux
 mkdir -p uploads vector_db
+### Windows
+mkdir uploads, vector_db
 ```
 
 ## 🚀 Запуск
