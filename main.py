@@ -16,34 +16,47 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 def check_dependencies():
     """Проверка установленных зависимостей"""
     required_packages = [
-        'sentence_transformers',
-        'chromadb',
-        'docx',
-        'openai',
-        'fastapi',
-        'uvicorn',
-     #   'pyyaml',
-        'nltk',
-        'sklearn'
+        ('sentence-transformers', 'sentence_transformers'),
+        ('chromadb', 'chromadb'),
+        ('python-docx', 'docx'),
+        ('openai', 'openai'),
+        ('fastapi', 'fastapi'),
+        ('uvicorn', 'uvicorn'),
+        ('pyyaml', 'yaml'),
+        ('nltk', 'nltk'),
+        ('scikit-learn', 'sklearn'),
+        ('numpy', 'numpy'),
+        ('requests', 'requests')
     ]
     
     missing = []
-    for package in required_packages:
+    installed = []
+    
+    for pip_name, import_name in required_packages:
         try:
-            __import__(package)
-        except ImportError:
-            missing.append(package)
+            __import__(import_name)
+            installed.append(pip_name)
+            print(f"✅ {pip_name} -> импорт {import_name} OK")
+        except ImportError as e:
+            missing.append(pip_name)
+            print(f"❌ {pip_name} -> ошибка: {e}")
     
     if missing:
-        print("❌ Отсутствуют зависимости:")
+        print("\n" + "="*50)
+        print("❌ ОТСУТСТВУЮТ ЗАВИСИМОСТИ:")
         for package in missing:
             print(f"   - {package}")
-        print("\nУстановите их командой:")
+        print("\n" + "="*50)
+        print("Установите их командой:")
         print(f"pip install {' '.join(missing)}")
+        print("="*50)
         return False
-    
-    print("✅ Все зависимости установлены")
-    return True
+    else:
+        print("\n" + "="*50)
+        print("✅ ВСЕ ЗАВИСИМОСТИ УСТАНОВЛЕНЫ!")
+        print(f"   Установлено пакетов: {len(installed)}")
+        print("="*50)
+        return True
 
 def check_lm_studio():
     """Проверка подключения к LM Studio"""
