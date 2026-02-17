@@ -1,64 +1,63 @@
-from openai import OpenAI
-from typing import List, Dict, Any
+# agents/answer_gpt_async.py
+import httpx
+import asyncio
+import json
+from typing import List, Dict, Any, Optional
 
-class AnswerGPTAgent:
-    """Агент для генерации ответов через LM Studio"""
+class AnswerGPTAgentAsync:
+    """
+    Асинхронный агент для максимальной производительности
+    """
     
-    def __init__(self, api_base="http://localhost:1234/v1", 
-                 model="local-model", temperature=0.3, max_tokens=1000):
-        self.client = OpenAI(
-            base_url=api_base,
-            api_key="not-needed"
-        )
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
+    def __init__(self, 
+                 api_base: str = "http://localhost:1234/v1", 
+                 model: str = "local-model"):
         
-        self.system_prompt = """Ты - ассистент по анализу документов. 
-        Используй предоставленные фрагменты документа для ответа.
-        Обязательно указывай номера глав и разделов в ответе.
-        Если информации недостаточно - так и скажи.
-        Отвечай на том же языке, на котором задан вопрос."""
+        self.api_base = api_base.rstrip('/')
+        self.model = model
+        
+        # Асинхронный клиент
+        self.client = httpx.AsyncClient(
+            timeout=120.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+            headers={"Content-Type": "application/json"},
+            http2=True
+        )
     
-    def generate_answer(self, query: str, context_chunks: List[Dict]) -> str:
-        """Генерация ответа на основе контекста"""
+    async def generate_answer_async(self, query: str, context_chunks: List[Dict]) -> str:
+        """Асинхронная генерация ответа"""
+        
         context_text = self._format_context(context_chunks)
         
-        messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": f"""
-Вопрос: {query}
-
-Контекст из документа:
-{context_text}
-
-Ответь на вопрос, используя только предоставленный контекст.
-Укажи источники (глава, раздел) в ответе.
-"""}
-        ]
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": "Ты - ассистент по анализу документов."},
+                {"role": "user", "content": f"Контекст: {context_text}\n\nВопрос: {query}"}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 1000
+        }
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens
+            response = await self.client.post(
+                f"{self.api_base}/chat/completions",
+                json=payload
             )
-            return response.choices[0].message.content
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data['choices'][0]['message']['content']
+            else:
+                return f"Ошибка: {response.status_code}"
+                
         except Exception as e:
-            return f"❌ Ошибка генерации ответа: {str(e)}"
+            return f"Ошибка: {str(e)}"
     
     def _format_context(self, chunks: List[Dict]) -> str:
         """Форматирование контекста"""
-        formatted = []
-        for i, chunk in enumerate(chunks, 1):
-            source_info = []
-            if 'chapter_title' in chunk.get('metadata', {}):
-                source_info.append(f"Глава: {chunk['metadata']['chapter_title']}")
-            if 'section_title' in chunk.get('metadata', {}):
-                source_info.append(f"Раздел: {chunk['metadata']['section_title']}")
-            
-            source_str = f"[{', '.join(source_info)}]" if source_info else ""
-            formatted.append(f"Фрагмент {i} {source_str}:\n{chunk['text']}")
-        
-        return "\n\n".join(formatted)
+        return "\n\n".join([chunk.get('text', '') for chunk in chunks[:5]])
+    
+    async def close(self):
+        """Закрытие клиента"""
+        await self.client.aclose()

@@ -59,26 +59,49 @@ def check_dependencies():
         return True
 
 def check_lm_studio():
-    """Проверка подключения к LM Studio"""
+    """Проверка подключения к LM Studio (упрощенная)"""
+    print("🔍 Проверка подключения к LM Studio...")
     try:
-        from openai import OpenAI
-        client = OpenAI(
-            base_url="http://localhost:1234/v1",
-            api_key="not-needed"
-        )
-        
-        response = client.chat.completions.create(
-            model="local-model",
-            messages=[{"role": "user", "content": "Hello"}],
-            max_tokens=10
-        )
-        print("✅ LM Studio доступна")
-        return True
-    except Exception as e:
-        print("⚠️ LM Studio не запущена или недоступна")
-        print("   Запустите LM Studio и загрузите модель")
-        print("   URL: http://localhost:1234/v1")
+        import requests
+        # Попробуем просто получить список моделей — это самый надежный тест
+        response = requests.get("http://localhost:1234/v1/models", timeout=5)
+        if response.status_code == 200:
+            print(f"✅ LM Studio доступна. Статус: {response.status_code}")
+            return True
+        else:
+            print(f"⚠️ LM Studio вернула статус {response.status_code}")
+            return False
+    except ImportError:
+        print("❌ Библиотека requests не установлена")
         return False
+    except requests.exceptions.ConnectionError:
+        print("❌ Ошибка подключения: порт 1234 не отвечает")
+        return False
+    except Exception as e:
+        print(f"❌ Неизвестная ошибка: {e}")
+        return False
+
+#def check_lm_studio():
+#    """Проверка подключения к LM Studio"""
+#    try:
+#        from openai import OpenAI
+#        client = OpenAI(
+#            base_url="http://localhost:1234/v1",
+#            api_key="not-needed"
+#        )
+#        
+#        response = client.chat.completions.create(
+#            model="local-model",
+#            messages=[{"role": "user", "content": "Hello"}],
+#            max_tokens=10
+#        )
+#        print("✅ LM Studio доступна")
+#        return True
+#    except Exception as e:
+#        print("⚠️ LM Studio не запущена или недоступна")
+#        print("   Запустите LM Studio и загрузите модель")
+#        print("   URL: http://localhost:1234/v1")
+#        return False
 
 def main():
     """Главная функция"""
