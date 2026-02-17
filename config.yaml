@@ -1,8 +1,8 @@
 # Конфигурация системы
 embedding_model: "all-MiniLM-L6-v2"  # Модель для эмбеддингов
 generation_model: "local-model"      # Модель в LM Studio
-chunk_size: 50
-overlap_size: 5
+chunk_size: 500
+overlap_size: 50
 use_gpu: false
 batch_size: 16
 lm_studio_url: "http://localhost:1234/v1"
